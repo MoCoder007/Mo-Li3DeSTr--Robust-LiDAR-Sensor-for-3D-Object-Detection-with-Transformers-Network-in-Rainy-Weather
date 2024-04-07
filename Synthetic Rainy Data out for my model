@@ -1,0 +1,63 @@
+import numpy as np
+import random
+
+tensor_output_data = [
+    [37.0150, 0.1250, 1.4610, 0.3600],
+    [23.0170, 0.0680, 0.9870, 0.3800],
+    [22.0760, 2.5730, 0.9610, 0.3600],
+    [34.9210, 4.4740, 1.4000, 0.3800],
+    [31.4230, 12.2190, 1.3490, 0.1500],
+    [26.3330, 4.2970, 1.1110, 0.2800],
+    [9.0970, 2.6720, 0.5300, 0.3400],
+    [19.2990, 0.0830, 0.8620, 0.2700],
+    [34.1650, 14.9220, 1.4700, 0.1600],
+    [30.2620, 4.5520, 1.2440, 0.3800],
+    [47.8910, 11.6780, 1.8760, 0.1700],
+    [25.6040, 6.0610, 1.0990, 0.1600],
+    [49.7240, 2.1310, 1.8920, 0.1500],
+    [6.2530, 3.4930, 0.4510, 0.3800],
+    [35.9320, 8.5160, 1.4580, 0.1600],
+    [46.3760, 16.5540, 1.8740, 0.1000],
+    [21.3460, 0.2960, 0.9310, 0.3900],
+    [26.2480, 5.4350, 1.1160, 0.2800],
+    [29.5470, 39.1300, 1.8670, 0.1700],
+    [8.6880, 3.2020, 0.5220, 0.0000]
+]
+
+
+def generate_model_outputs_with_explicit_rain(tensor_output_data, confidence_range=(0.10, 0.70), heavy_rain_threshold=0.30):
+    model_outputs = []
+    for data in tensor_output_data:
+        # Perturb tensor output data coordinates to simulate prediction
+        perturbation = np.random.normal(0, 0.05, 3)  # Small perturbation
+        new_coords = data[:3] + perturbation
+
+        # Directly determine the confidence score to simulate rain effect
+        # If heavy rain, set the confidence score within the lower range (<= heavy_rain_threshold)
+        # If light rain, set the confidence score above the threshold
+        if random.random() < 0.5:  # Assuming a 50-50 chance for heavy vs light rain for illustration
+            # Heavy rain
+            adjusted_confidence_score = random.uniform(confidence_range[0], heavy_rain_threshold)
+        else:
+            # Light rain
+            adjusted_confidence_score = random.uniform(heavy_rain_threshold + 0.01, confidence_range[1])
+
+        # Create a new prediction entry with adjusted confidence
+        prediction = np.concatenate((new_coords, [adjusted_confidence_score]))
+        model_outputs.append(prediction)
+
+    return np.array(model_outputs)
+
+# Generate synthetic model predictions with explicit rain severity effects using the modified data
+model_predictions_with_explicit_rain = generate_model_outputs_with_explicit_rain(tensor_output_data)
+
+# Print some of the synthetic predictions with explicit rain effects
+for pred in model_predictions_with_explicit_rain[:]: 
+    print(pred)
+
+# Convert numpy array to Python list of lists
+tensor_output_data_list = model_predictions_with_explicit_rain.tolist()
+
+# Print the predictions as lists
+for pred in tensor_output_data_list[:]:  # Just as an example, print first 5 predictions
+    print(pred)
