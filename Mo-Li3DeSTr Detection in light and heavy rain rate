@@ -1,0 +1,30 @@
+import matplotlib.pyplot as plt
+
+# Adjusted example data for object detection counts of vehicles and cycles at different rain rates
+rain_rates = [0, 10, 20, 30, 40, 50, 60]  # in mm/h
+vehicle_detections_light = [20, 19, 17, 16, 13, 9, 5]  # Light rain
+vehicle_detections_heavy = [15, 14, 12, 9, 7, 6, 3]   # Heavy rain
+cycle_detections_light = [14, 11, 10, 9, 7, 6, 4]    # Light rain
+cycle_detections_heavy = [12, 11, 9, 8, 6, 3, 1]        # Heavy rain
+
+# Plotting vehicle and cycle detection counts for light rain in one figure
+plt.figure(figsize=(8, 6))
+plt.plot(rain_rates, vehicle_detections_light, 'o-', label='Vehicle Detections (Light Rain)')
+plt.plot(rain_rates, cycle_detections_light, 's--', label='Cycle Detections (Light Rain)')
+plt.xlabel('Rain Rate (mm/h)')
+plt.ylabel('Detection Counts')
+plt.title('Mo-Li3DeSTr Detection rain rate (Light Rain)')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plotting vehicle and cycle detection counts for heavy rain in one figure
+plt.figure(figsize=(8, 6))
+plt.plot(rain_rates, vehicle_detections_heavy, 'o-', label='Vehicle Detections (Heavy Rain)')
+plt.plot(rain_rates, cycle_detections_heavy, 's--', label='Cycle Detections (Heavy Rain)')
+plt.xlabel('Rain Rate (mm/h)')
+plt.ylabel('Detection Counts')
+plt.title('Mo-Li3DeSTr Detection rain rate (Heavy Rain)')
+plt.legend()
+plt.grid(True)
+plt.show()
