@@ -43,7 +43,8 @@ MO-Li3DeSTr is currently in an advanced stage of development, with ongoing effor
 ![Mo-Li3DeSTr detection in light Rain](https://github.com/MoCoder007/Mo-Li3DeSTr--Robust-LiDAR-Sensor-for-3D-Object-Detection-with-Transformers-Network-in-Rainy-Weather-/blob/main/Mo-Li3DeSTr%20detection%20rain%20rate%20(Light%20Rain).jpeg)
 
 ## Mo-Li3DeSTr detection in Heavy Rain
-![Mo-Li3DeSTr detection in Heavy Rain](https://github.com/MoCoder007/Mo-Li3DeSTr--Robust-LiDAR-Sensor-for-3D-Object-Detection-with-Transformers-Network-in-Rainy-Weather-/blob/main/Mo-Li3DeSTr%20detection%20rain%20rate%20Heavy%20Rain).jpeg)
+![Mo-Li3DeSTr detection in Heavy Rain](https://github.com/MoCoder007/Mo-Li3DeSTr--Robust-LiDAR-Sensor-for-3D-Object-Detection-with-Transformers-Network-in-Rainy-Weather-/blob/main/Mo-Li3DeSTr%20detection%20rain%20rate%20(Heavy%20Rain).jpeg)
+
 
 ## Acknowledgments
 Special thanks to Mohamed Elatfi, Haigen Min, Akram Al-Radaei, Anass Taoussi, and all contributors. This project is supported by Chang’an University, China.
