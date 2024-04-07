@@ -1,0 +1,90 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import random
+
+# Define your tensor ouput data
+tensor_output_data = [
+    [37.0150, 0.1250, 1.4610, 0.3600],
+    [23.0170, 0.0680, 0.9870, 0.3800],
+    [22.0760, 2.5730, 0.9610, 0.3600],
+    [34.9210, 4.4740, 1.4000, 0.3800],
+    [31.4230, 12.2190, 1.3490, 0.1500],
+    [26.3330, 4.2970, 1.1110, 0.2800],
+    [9.0970, 2.6720, 0.5300, 0.3400],
+    [19.2990, 0.0830, 0.8620, 0.2700],
+    [34.1650, 14.9220, 1.4700, 0.1600],
+    [30.2620, 4.5520, 1.2440, 0.3800],
+    [47.8910, 11.6780, 1.8760, 0.1700],
+    [25.6040, 6.0610, 1.0990, 0.1600],
+    [49.7240, 2.1310, 1.8920, 0.1500],
+    [6.2530, 3.4930, 0.4510, 0.3800],
+    [35.9320, 8.5160, 1.4580, 0.1600],
+    [46.3760, 16.5540, 1.8740, 0.1000],
+    [21.3460, 0.2960, 0.9310, 0.3900],
+    [26.2480, 5.4350, 1.1160, 0.2800],
+    [29.5470, 39.1300, 1.8670, 0.1700],
+    [8.6880, 3.2020, 0.5220, 0.0000]
+]
+
+# Define the simulation functions (Assuming they are similar to previous examples)
+def generate_random_object(data):
+    data_np = np.array(data)
+    means = np.mean(data_np, axis=0)
+    stds = np.std(data_np, axis=0)
+    return list(np.random.normal(means, stds))
+
+def simulate_detection_errors(tensor_output_data, fp_rate, fn_rate):
+    simulated_detections = []
+    num_fps, num_fns = 0, 0
+    
+    for obj in tensor_output_data:
+        if random.random() >= fn_rate:
+            simulated_detections.append(obj)
+        else:
+            num_fns += 1
+            
+    num_fps_to_add = int(len(tensor_output_data) * fp_rate)
+    for _ in range(num_fps_to_add):
+        simulated_detections.append(generate_random_object(tensor_output_data))
+        num_fps += 1
+        
+    return simulated_detections, num_fps, num_fns
+
+# Rain intensity levels and results collection as already defined
+
+rain_intensity_levels = {
+    'light': {'fp_rate': 0.05, 'fn_rate': 0.1},
+    'moderate': {'fp_rate': 0.1, 'fn_rate': 0.5},
+    'heavy': {'fp_rate': 0.2, 'fn_rate': 0.6}
+}
+
+results = {'Intensity': [], 'False Positives': [], 'False Negatives': []}
+
+# Run simulation for each rain intensity and store results
+for intensity, rates in rain_intensity_levels.items():
+    _, num_fps, num_fns = simulate_detection_errors(tensor_output_data, rates['fp_rate'], rates['fn_rate'])
+    results['Intensity'].append(intensity.capitalize())
+    results['False Positives'].append(num_fps)
+    results['False Negatives'].append(num_fns)
+
+# The plotting code remains unchanged
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+bar_width = 0.35
+r1 = np.arange(len(results['Intensity']))
+r2 = [x + bar_width for x in r1]
+
+ax.bar(r1, results['False Positives'], color='b', width=bar_width, edgecolor='grey', label='False Positives')
+ax.bar(r2, results['False Negatives'], color='r', width=bar_width, edgecolor='grey', label='False Negatives')
+
+ax.set_xlabel('Rain Intensity', fontweight='bold')
+ax.set_xticks([r + bar_width/2 for r in range(len(results['Intensity']))])
+ax.set_xticklabels(results['Intensity'])
+
+ax.legend()
+plt.title('Impact of Rain Intensity on Detection Errors')
+plt.ylabel('Count')
+
+plt.tight_layout()
+plt.show()
