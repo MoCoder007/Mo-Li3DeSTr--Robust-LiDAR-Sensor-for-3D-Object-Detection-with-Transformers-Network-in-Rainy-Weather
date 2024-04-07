@@ -1,0 +1,25 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Given precision and recall values
+precisions = np.array([.8161, 0.8024, 0.7972, 0.7883, 0.7829, 0.7821, 0.7643, 0.7618, 0.7513, 0.7485,
+0.7289, 0.7039, 0.6935, 0.6816, 0.6724, 0.6632, 0.6547, 0.6442, 0.6341, 0.6256,
+0.6125, 0.6079, 0.5998, 0.5898, 0.5797, 0.5683, 0.5525, 0.5447, 0.5392, 0.5154,
+0.5092, 0.4806, 0.4454, 0.4212, 0.3972, 0.3724, 0.3657, 0.3509, 0.3396, 0.3113])
+
+recalls = np.array([0.2441, 0.2457, 0.2856, 0.3158, 0.3364, 0.3652, 0.4197, 0.4412, 0.4493, 0.4547,
+0.4623, 0.4675, 0.4712, 0.4765, 0.4821, 0.4867, 0.4973, 0.5436, 0.5678, 0.5812,
+0.5994, 0.6043, 0.6232, 0.6491, 0.6562, 0.6649, 0.6702, 0.6883, 0.6956, 0.7017,
+0.7175, 0.7248, 0.7493, 0.7565, 0.7618, 0.7756, 0.7812, 0.8023, 0.8147, 0.8312])
+
+# Plotting the precision-recall curve with x and y axes limited to [0, 1]
+plt.figure(figsize=(10, 6))
+plt.plot(recalls, precisions, marker='o', color='orange', label='Precision-Recall Curve')
+plt.xlabel('Recall', fontsize=12)
+plt.ylabel('Precision', fontsize=12)
+plt.title('Precision-Recall Curve in Rainy weather', fontsize=14)
+# plt.xlim(0, 1)  # Setting x-axis (Recall) limit from 0 to 1
+# plt.ylim(0, 1)  # Setting y-axis (Precision) limit from 0 to 1
+plt.grid(True)
+plt.legend()
+plt.show()
