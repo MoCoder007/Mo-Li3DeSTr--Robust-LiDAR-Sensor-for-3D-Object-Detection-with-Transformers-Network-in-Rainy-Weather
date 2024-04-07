@@ -1,0 +1,37 @@
+import matplotlib.pyplot as plt
+
+# Expanded range of rain rates including 60 mm/h
+rain_rates = [0, 10, 20, 30, 40, 50, 60]
+
+# Assuming hypothetical data for the number of points and detection range for each rain rate
+number_of_points_light = [20000, 18500, 17500, 17000, 16000, 15500, 15000, 14000, 13500, 13000, 12000, 11500, 10000, 9500, 9000]  # Light rain data
+number_of_points_heavy = [13000, 12000, 11500, 11000, 10000, 9500, 9000, 8500, 8100, 7900, 7600, 7300, 7100, 6800, 6500]    # Heavy rain data
+
+detection_range_light = [20, 19.8, 19.6, 19.4, 19, 18.5, 18.2, 18, 17.8, 17.5, 17.3, 17, 16.8, 16.4, 16]               # Light rain data
+detection_range_heavy = [16, 15.9, 15.7, 15.3, 15, 14.8, 14.4, 14, 13.6, 13.3, 13, 12.7, 12.4, 12, 10]               # Heavy rain data
+
+# Splitting rain rates for light and heavy
+rain_rates_light = [0, 5, 15, 18, 20, 23, 25, 28,30, 33, 37, 40, 43, 47, 50]
+rain_rates_heavy = [25, 28, 30, 33, 35, 38, 41, 44, 47, 49, 51, 53, 55, 58, 60]
+
+# Plotting for light rain
+plt.figure(figsize=(8, 6))
+plt.plot(rain_rates_light, number_of_points_light, 'o-', label='Number of points (Light Rain)')
+plt.plot(rain_rates_light, detection_range_light, 's-', label='Detection Range (Light Rain)')
+plt.xlabel('Rain Rate (mm/h)')
+plt.ylabel('Value')
+plt.title('LiDAR Scan Metrics for Light Rain')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Plotting for heavy rain
+plt.figure(figsize=(8, 6))
+plt.plot(rain_rates_heavy, number_of_points_heavy, 'o-', label='Number of points (Heavy Rain)')
+plt.plot(rain_rates_heavy, detection_range_heavy, 's-', label='Detection Range (Heavy Rain)')
+plt.xlabel('Rain Rate (mm/h)')
+plt.ylabel('Value')
+plt.title('LiDAR Scan Metrics for Heavy Rain')
+plt.legend()
+plt.grid(True)
+plt.show()
