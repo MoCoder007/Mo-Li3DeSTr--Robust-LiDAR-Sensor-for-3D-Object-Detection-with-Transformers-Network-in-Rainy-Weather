@@ -49,22 +49,6 @@ The Mo-Li3DeSTr project showcases critical innovations:
 - Enhanced Noise Interpretation Capabilities: By improving how sensors interpret distorted data, these models help maintain reliable detection and navigation systems in AVs, even during unfavorable weather conditions.
 - Setting New Benchmarks: With their high AP scores and robust performance under rain, these models set new standards for AV sensory technologies, particularly in terms of reliability and effectiveness in diverse weather scenarios.
 
-## Technologies Used
-
-- Python for core development.
-- PyTorch as the primary deep learning framework.
-- The KITTI dataset for training
-- Carla Simulation for testing Mo-Li3DeSTr-C Model
-- SHIFT dataset for training and testing 
-- Advanced transformer network models for data processing and interpretation.
-
-## Future Directions
-
-- Further Development: Ongoing improvements will focus on optimizing these models for other adverse conditions such as fog and snow.
-- Cross-Dataset Efficiency: Future versions could explore hybrid training regimes that use multiple datasets to enhance generalizability and reliability across various environmental scenarios.
-- Real-Time Processing Enhancements: Efforts to reduce the computational demands of transformer networks to facilitate real-time processing capabilities in AVs.
-
-
 ## MODEL ARCHITECTURE (MO-Li3DeSTr)
 ![MODEL ARCHITECTURE (MO-Li3DeSTr)](https://github.com/MoCoder007/Mo-Li3DeSTr--Robust-LiDAR-Sensor-for-3D-Object-Detection-with-Transformers-Network-in-Rainy-Weather/blob/main/Model%20Architecture.PNG)
 
@@ -83,3 +67,18 @@ The Mo-Li3DeSTr project showcases critical innovations:
 
 ## Simulation Lidar View
 ![Simulation Camera View](https://github.com/MoCoder007/Mo-Li3DeSTr--Robust-LiDAR-Sensor-for-3D-Object-Detection-with-Transformers-Network-in-Rainy-Weather/blob/main/Simulation%20Lidar%20View.PNG)
+
+## Technologies Used
+
+- Python for core development.
+- PyTorch as the primary deep learning framework.
+- The KITTI dataset for training
+- Carla Simulation for testing Mo-Li3DeSTr-C Model
+- SHIFT dataset for training and testing 
+- Advanced transformer network models for data processing and interpretation.
+
+## Future Directions
+
+- Further Development: Ongoing improvements will focus on optimizing these models for other adverse conditions such as fog and snow.
+- Cross-Dataset Efficiency: Future versions could explore hybrid training regimes that use multiple datasets to enhance generalizability and reliability across various environmental scenarios.
+- Real-Time Processing Enhancements: Efforts to reduce the computational demands of transformer networks to facilitate real-time processing capabilities in AVs.
