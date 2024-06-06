@@ -16,8 +16,8 @@ from scipy.spatial import KDTree
 # In[2]:
 
 
-LABEL_TO_INDEX = {'Car': 0,'Cyclist': 1}
-INDEX_TO_LABEL = {0: 'Car', 1: 'Cyclist'}
+LABEL_TO_INDEX = {'car': 0, 'bicycle': 1, 'pedestrian': 2}  # Adjusted for your labels
+INDEX_TO_LABEL = {0: 'Car', 1: 'Bicycle', 2: 'Pedestrian'}  # Adjusted for your labels
 
 # Reads annotations from a file, converting bounding box information to a format suitable for processing
 def read_annotations(file_path):
