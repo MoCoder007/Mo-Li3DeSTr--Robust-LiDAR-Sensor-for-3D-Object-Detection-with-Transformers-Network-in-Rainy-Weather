@@ -1,67 +1,107 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[ ]:
-
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import open3d as o3d
 import os
-import mmcv
-from torch.utils.data import DataLoader
-from mmdet3d.core.bbox import CameraInstance3DBoxes
-from mmdet3d.datasets import build_dataset
-from mmdet3d.models import build_model
-from mmdet3d.apis import train_model
-from mmcv.runner import get_dist_info, init_dist
-from mmdet3d.datasets.custom_3d import Custom3DDataset
-from mmdet3d.datasets.builder import DATASETS
-from mmdet3d.datasets.pipelines import Compose
-
-# Dataset registration
-@DATASETS.register_module()
-class SHIFTDataset(Custom3DDataset):
-    CLASSES = ("car", "bicycle", "pedestrian")
-
-    def __init__(self, data_root, ann_file, pipeline, classes=None, test_mode=False):
-        super().__init__(data_root, ann_file, '', pipeline, classes=classes, test_mode=test_mode)
-        self.data_infos = self.load_annotations(ann_file)
-
-    def load_annotations(self, ann_file):
-        data_infos = mmcv.load(os.path.join(self.data_root, ann_file))
-        return data_infos
-
-    def get_data_info(self, idx):
-        info = self.data_infos[idx]
-        lidar_path = os.path.join(self.data_root, info['lidar_path'])
-        pcd = o3d.io.read_point_cloud(lidar_path)
-        points = np.asarray(pcd.points)
-        return points, info['annos']
-
-    def prepare_train_data(self, idx):
-        points, annos = self.get_data_info(idx)
-        points = points.astype(np.float32)
-        
-        bboxes = np.stack([anno['bbox_3d'] for anno in annos], axis=0).astype(np.float32)
-        labels = np.array([self.CLASSES.index(anno['category_id']) for anno in annos], dtype=np.long)
-
-        gt_bboxes_3d = CameraInstance3DBoxes(bboxes, box_dim=7, origin=(0.5, 0.5, 0.5))
-        
-        results = {'points': points, 'gt_bboxes_3d': gt_bboxes_3d, 'gt_labels_3d': labels}
-        if self.pipeline:
-            results = self.pipeline(results)
-        return results
-
-
-#  Transformer model's architecture
-
+import json
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
+import math
 
+LABEL_TO_INDEX = {'car': 0, 'bicycle': 1}  # Adjusted for your labels
+INDEX_TO_LABEL = {0: 'Car', 1: 'Bicycle'}  # Adjusted for your labels
+
+class NuScenesDataset(Dataset):
+    def __init__(self, root_dir, annotation_file, max_points=50000, num_files=10000):  # Reduced max_points to 50000
+        self.root_dir = root_dir
+        self.annotation_file = annotation_file
+        self.max_points = max_points
+        self.num_files = num_files
+        self.lidar_files = self.get_lidar_files()[:self.num_files]  # Slice to get only the first num_files
+        self.annotations = self.load_annotations()
+
+        # Debug print statements
+        print(f"Found {len(self.lidar_files)} LiDAR files. Processing {self.num_files} files.")
+        print(f"Loaded {len(self.annotations)} annotations.")
+
+    def get_lidar_files(self):
+        files = []
+        split_dir = os.path.join(self.root_dir, 'v1.0-trainval')
+        print(f"Looking for LiDAR files in {split_dir}")
+        
+        if not os.path.exists(split_dir):
+            print(f"Directory {split_dir} does not exist.")
+            return files
+        
+        for root, _, filenames in os.walk(split_dir):
+            for filename in filenames:
+                if filename.endswith('.bin'):
+                    full_path = os.path.join(root, filename)
+                    files.append(full_path)
+        
+        return files
+
+    def load_annotations(self):
+        with open(self.annotation_file, 'r') as file:
+            data = json.load(file)
+        return data
+
+    def __len__(self):
+        return len(self.lidar_files)
+
+    def __getitem__(self, idx):
+        lidar_file = self.lidar_files[idx]
+        lidar_data = np.fromfile(lidar_file, dtype=np.float32)
+        
+        if lidar_data.size % 4 != 0:
+            raise ValueError(f"LiDAR data from {lidar_file} cannot be reshaped to (-1, 4). Incorrect number of elements.")
+        
+        lidar_data = lidar_data.reshape(-1, 4)
+        
+        # Directly pad or truncate LiDAR data as necessary
+        padded_lidar_data = self.pad_or_truncate(lidar_data)
+        
+        # Get sample token based on the file name
+        sample_token = os.path.basename(lidar_file).split('.')[0]
+        annotations = self.get_annotations(sample_token)
+        
+        return torch.tensor(padded_lidar_data, dtype=torch.float32), annotations
+
+    def pad_or_truncate(self, lidar_data):
+        num_points = lidar_data.shape[0]
+        if num_points < self.max_points:
+            padding = np.zeros((self.max_points - num_points, lidar_data.shape[1]), dtype=np.float32)
+            lidar_data = np.vstack((lidar_data, padding))
+        elif num_points > self.max_points:
+            lidar_data = lidar_data[:self.max_points, :]
+        return lidar_data
+
+    def get_annotations(self, sample_token):
+        # Retrieve annotations for the given sample token
+        for item in self.annotations:
+            if item['token'] == sample_token:
+                return item['annotations']
+        return []
+
+def process_objects_in_lidar(data, annotations):
+    detected_objects = []
+    for annotation in annotations:
+        class_label = LABEL_TO_INDEX.get(annotation['label_name'], -1)
+        if class_label != -1:
+            bbox_center = np.array(annotation['translation'])
+            bbox_size = np.array(annotation['size'])
+            bbox_min = bbox_center - bbox_size / 2
+            bbox_max = bbox_center + bbox_size / 2
+            
+            in_bbox_indices = np.where(
+                (data[:, 0] >= bbox_min[0]) & (data[:, 0] <= bbox_max[0]) &
+                (data[:, 1] >= bbox_min[1]) & (data[:, 1] <= bbox_max[1]) &
+                (data[:, 2] >= bbox_min[2]) & (data[:, 2] <= bbox_max[2])
+            )[0]
+            
+            for idx in in_bbox_indices:
+                detected_objects.append((data[idx], class_label))
+    
+    return detected_objects
 
 # Define the Transformer Model
 class LiDARTransformer(nn.Module):
@@ -88,6 +128,7 @@ class LiDARTransformer(nn.Module):
         detection_output = self.object_detection_head(x)
         return detection_output
 
+
 class PositionalEncoding3D(nn.Module):
     def __init__(self, dim_model, max_len=5000):
         super(PositionalEncoding3D, self).__init__()
@@ -106,6 +147,7 @@ class PositionalEncoding3D(nn.Module):
         seq_len = x.size(1)
         x = x + self.pe[:, :seq_len]
         return x
+
 
 class RobustPointNetEmbeddingLayer(nn.Module):
     def __init__(self, output_dim):
@@ -128,6 +170,7 @@ class RobustPointNetEmbeddingLayer(nn.Module):
         x = nn.MaxPool1d(x.size(-1))(x)
         x = x.view(-1, self.bn3.num_features)
         return x
+
 
 class TNet(nn.Module):
     def __init__(self, k=3):
@@ -160,6 +203,7 @@ class TNet(nn.Module):
         x = x.view(batch_size, self.k, self.k)
         return x
 
+
 class TransformerEncoderLayer(nn.Module):
     def __init__(self, d_model, num_heads, hidden_dim):
         super(TransformerEncoderLayer, self).__init__()
@@ -174,6 +218,7 @@ class TransformerEncoderLayer(nn.Module):
         ff_output = self.ff(x)
         x = self.norm2(x + ff_output)
         return x
+
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, num_heads):
@@ -205,6 +250,8 @@ class MultiHeadAttention(nn.Module):
         scaled_attention_logits = matmul_qk / torch.sqrt(dk)
 
         if mask is not None:
+            # Ensure the mask has the same shape as the attention logits
+            mask = mask.unsqueeze(1).unsqueeze(2)
             scaled_attention_logits += (mask * -1e9)
 
         attention_weights = F.softmax(scaled_attention_logits, dim=-1)
@@ -216,6 +263,7 @@ class MultiHeadAttention(nn.Module):
 
         return output
 
+
 class FeedForward(nn.Module):
     def __init__(self, d_model, hidden_dim):
         super(FeedForward, self).__init__()
@@ -226,6 +274,7 @@ class FeedForward(nn.Module):
         x = F.relu(self.linear1(x))
         x = self.linear2(x)
         return x
+
 
 class ObjectDetectionHead(nn.Module):
     def __init__(self, d_model, num_classes, num_proposals):
@@ -250,92 +299,53 @@ class ObjectDetectionHead(nn.Module):
         scores = self.class_score(x).view(x.size(0), self.num_proposals, self.num_classes)  # Reshape to (batch, num_proposals, num_classes)
         return bbox, scores
 
-# Training Stage
-def main():
-    model = LiDARTransformer(num_classes=12, dim_model=2048, num_heads=16, num_encoder_layers=8, hidden_dim=2048, num_proposals=150)
-    dataset = SHIFTDataset(
-        data_root='D:/Shift Dataset_lidar_data_training',
-        ann_file='train.json',
-        pipeline=[dict(type='LoadPointsFromFile', coord_type='LIDAR', load_dim=3, use_dim=3),
-                  dict(type='DefaultFormatBundle3D', class_names=('car', 'bicycle', 'pedestrian')),
-                  dict(type='Collect3D', keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])],
-        classes=('car', 'bicycle', 'pedestrian')
-    )
-    data_loader = DataLoader(dataset, batch_size=2, shuffle=True, num_workers=4)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    for epoch in range(10):  # Runs for 10 epochs
-        for i, data in enumerate(data_loader):
-            points = data['points'].to(device)
-            gt_bboxes_3d = data['gt_bboxes_3d'].to(device)
-            gt_labels_3d = data['gt_labels_3d'].to(device)
-            
+# Training loop and loss function
+def train_model(model, dataloader, optimizer, criterion, num_epochs=10):
+    for epoch in range(num_epochs):
+        model.train()
+        running_loss = 0.0
+        
+        for i, (inputs, annotations) in enumerate(dataloader):
+            inputs = inputs.to(device)
             optimizer.zero_grad()
-            predictions = model(points)
-            loss = compute_loss(predictions, gt_bboxes_3d, gt_labels_3d)  # Define your loss computation
+            
+            # Forward pass
+            bbox_preds, class_scores = model(inputs)
+            
+            # Debug print statements to check tensor sizes
+            print(f"bbox_preds shape: {bbox_preds.shape}")
+            print(f"class_scores shape: {class_scores.shape}")
+            print(f"annotations length: {len(annotations)}")
+
+            # Compute loss
+            loss = criterion(bbox_preds, class_scores, annotations)
             loss.backward()
             optimizer.step()
             
-            if i % 10 == 0:
-                print(f"Epoch [{epoch + 1}/{10}], Step [{i}], Loss: {loss.item():.4f}")
+            running_loss += loss.item()
+            if i % 100 == 99:  # Print every 100 mini-batches
+                print(f"[{epoch + 1}, {i + 1}] loss: {running_loss / 100}")
+                running_loss = 0.0
 
-if __name__ == "__main__":
-    main()
+    # Save the model weights
+    torch.save(model.state_dict(), 'Mo-Li3DeSTr-R-New.pth')
 
+# Placeholder Loss Function
+def detection_loss(bbox_preds, class_scores, annotations):
+    # This function should compute the loss based on predicted bounding boxes and class scores vs annotations
+    # Placeholder implementation, actual implementation should compute the actual loss
+    return torch.tensor(0.0, requires_grad=True)
 
-# In[ ]:
+# Initialize model, optimizer, and DataLoader
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = LiDARTransformer(num_classes=2, dim_model=128, num_heads=4, num_encoder_layers=4, hidden_dim=256, num_proposals=100).to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+criterion = detection_loss
 
+root_dir = r"D:\nuScenes-lidarseg"
+annotation_file = r"D:\nuScenes_Labels\lidarseg.json"
+nuscenes_dataset = NuScenesDataset(root_dir, annotation_file, num_files=10000)
+data_loader = DataLoader(nuscenes_dataset, batch_size=2, shuffle=True)  # Reduced batch size to 2
 
-#Testing Stage
-
-import torch
-from torch.utils.data import Dataset, DataLoader
-import numpy as np
-from sklearn.metrics import accuracy_score, average_precision_score
-
-# Load the full model
-model = torch.load('Mo-Li3DeSTr-R_Full_Model.pth')
-model.eval()  # Prepare the model for evaluation
-
-class SHIFTDataset(Dataset):
-    def __init__(self, root_dir):
-        self.root_dir = root_dir
-        self.files = [os.path.join(root_dir, f) for f in os.listdir(root_dir) if f.endswith('.npz')]
-    def __len__(self):
-        return len(self.files)
-    def __getitem__(self, idx):
-        data = np.load(self.files[idx])
-        point_cloud = torch.tensor(data['point_cloud'], dtype=torch.float32)
-        labels = torch.tensor(data['labels'], dtype=torch.long)
-        return point_cloud, labels
-
-def test_model(model, device, data_loader):
-    model.to(device)
-    model.eval()
-    all_preds, all_labels = [], []
-    with torch.no_grad():
-        for data, labels in data_loader:
-            data, labels = data.to(device), labels.to(device)
-            outputs = model(data)
-            _, predicted = torch.max(outputs, 1)
-            all_preds.extend(predicted.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
-    accuracy = accuracy_score(all_labels, all_preds)
-    average_precision = average_precision_score(all_labels, all_preds, average='macro')
-    print(f'Accuracy: {accuracy:.4f}')
-    print(f'Average Precision: {average_precision:.4f}')
-
-# Main function to execute testing
-def main():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    test_data_path = 'D:\Shift Dataset_lidar_data_testing'  # Path to the test dataset
-    test_dataset = SHIFTDataset(root_dir=test_data_path)
-    test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False)
-    test_model(model, device, test_loader)
-
-if __name__ == "__main__":
-    main()
-
+# Train the model
+train_model(model, data_loader, optimizer, criterion, num_epochs=10)
