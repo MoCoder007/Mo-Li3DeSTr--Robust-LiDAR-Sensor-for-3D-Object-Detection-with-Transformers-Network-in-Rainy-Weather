@@ -5,7 +5,7 @@ Autonomous vehicles (AVs) rely heavily on LiDAR (Light Detection and Ranging) fo
 
 # Mo-Li3DeSTr: Robust LiDAR Sensor for 3D Object Detection in Rainy Weather
 
-Mo-Li3DeSTr is a cutting-edge research project focused on enhancing 3D object detection capabilities of LiDAR sensors under adverse weather conditions, specifically during rain. Developed by Mohamed Elatfi, Haigen Min, Akram Al-Radaei, and Anass Taoussi at the School of Information Engineering, Chang’an University, China, this project presents a transformative model that integrates transformer networks with LiDAR technology to improve detection robustness.
+Mo-Li3DeSTr is a cutting-edge research focused on enhancing 3D object detection capabilities of LiDAR sensors under adverse weather conditions, specifically during rain. Developed by Mohamed Elatfi, Haigen Min and Akram Al-Radaei at the School of Information Engineering, Chang’an University, China, this research presents a transformative model that integrates transformer networks with LiDAR technology to improve detection robustness.
 
 The Mo-Li3DeSTr project, developed at Chang’an University, represents a significant advancement in the field of autonomous vehicle (AV) technologies, especially in enhancing LiDAR sensors' effectiveness under challenging weather conditions such as rain. This integration of transformer networks with LiDAR technology not only improves the robustness of detection systems but also enhances their interpretability when dealing with noisy, rain-distorted data. Below, I detail the two models developed under this project: Mo-Li3DeSTr-C and Mo-Li3DeSTr-R, focusing on their training environments, datasets, and performance metrics.
 
