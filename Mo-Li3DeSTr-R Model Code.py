@@ -7,8 +7,8 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 import math
 
-LABEL_TO_INDEX = {'car': 0, 'bicycle': 1}  # Adjusted for your labels
-INDEX_TO_LABEL = {0: 'Car', 1: 'Bicycle'}  # Adjusted for your labels
+LABEL_TO_INDEX = {'car': 0, 'bicycle': 1, 'pedestrian': 2}  # Adjusted for your labels
+INDEX_TO_LABEL = {0: 'Car', 1: 'Bicycle', 2: 'Pedestrian'}  # Adjusted for your labels
 
 class NuScenesDataset(Dataset):
     def __init__(self, root_dir, annotation_file, max_points=50000, num_files=10000):  # Reduced max_points to 50000
